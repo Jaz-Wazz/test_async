@@ -6,6 +6,7 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/read.hpp>
+#include <iostream>
 #include <string_view>
 #include <fmt/core.h>
 #include <exception>
@@ -27,7 +28,8 @@ auto coro(asio::io_context & executor) -> io::coro<void>
 		char * buffer_data = new char[size];
 		co_await asio::async_read(socket, asio::buffer(buffer_data, size), asio::transfer_exactly(size), io::use_coro);
 
-		fmt::print("[coro] - receive '{}' bytes. data: '{}'.\n", size, std::string_view(buffer_data, size));
+		// fmt::print("[coro] - receive '{}' bytes. data: '{}'.\n", size, std::string_view(buffer_data, size));
+		std::cout << "[coro] - receive '" << size << "' bytes. data: '" << std::string_view(buffer_data, size) << "'.\n";
 
 		delete[] buffer_data;
 	}
