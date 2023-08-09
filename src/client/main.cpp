@@ -1,11 +1,13 @@
 
 #include <iofox.hpp>
+#include <boost/asio/completion_condition.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/address.hpp>
 #include <boost/asio/co_spawn.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/buffer.hpp>
+#include <boost/asio/write.hpp>
 #include <fmt/core.h>
 #include <exception>
 #include <chrono>
@@ -17,24 +19,13 @@ auto writer(char name, asio::io_context & executor, asio::ip::tcp::socket & sock
 {
 	for(;;)
 	{
-		std::string buffer = (name == 'x') ? "garox" : "dudos";
-
-		// char * chrs = new char[buffer.size() + 4];
-		// int sz = buffer.size();
-		// char * buff = reinterpret_cast<char*>(&sz);
-
-		// std::memcpy(chrs, buff, 4);
-		// std::memcpy(chrs, buffer.data(), buffer.size());
-
-		// char buffer[string.size() + 4];
-		// std::memcpy(buffer, , 4);
+		std::string buffer(100000, name);
 
 		int package_size = buffer.size();
 		buffer.insert(0, reinterpret_cast<char *>(&package_size), 4);
 
-		auto size = co_await socket.async_write_some(asio::buffer(buffer), io::use_coro);
-		fmt::print("[coro '{}'] - send '{}' bytes. data: '{}'.\n", name, size - 4, buffer.substr(4));
-		// co_await asio::steady_timer(executor, std::chrono::seconds(1)).async_wait(io::use_coro);
+		co_await asio::async_write(socket, asio::buffer(buffer), asio::transfer_exactly(buffer.size()), io::use_coro);
+		fmt::print("[coro '{}'] - send '{}' bytes. data: '{}'.\n", name, buffer.size() - 4, buffer.substr(4));
 	}
 }
 
