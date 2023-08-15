@@ -13,6 +13,7 @@
 #include <boost/system/error_code.hpp>
 #include <fmt/core.h>
 #include <exception>
+#include <iostream>
 #include <chrono>
 #include <string>
 #include <vector>
@@ -37,13 +38,13 @@ auto reader(asio::io_context & executor, asio::channel<void(boost::system::error
 	}
 }
 
-auto writer(char name, std::string str, asio::channel<void(boost::system::error_code, std::string)> & channel) -> io::coro<void>
+auto writer(asio::io_context & executor, asio::channel<void(boost::system::error_code, std::string)> & channel) -> io::coro<void>
 {
-	for(;;)
+	for(std::string str;;)
 	{
-		fmt::print("[writer '{}'] - write: '{}'.\n", name, str);
+		std::cin >> str;
+		fmt::print("[writer] - write: '{}'.\n", str);
 		co_await channel.async_send({}, str, io::use_coro);
-		co_await asio::steady_timer(co_await asio::this_coro::executor, std::chrono::seconds(1)).async_wait(io::use_coro);
 	}
 }
 
@@ -54,8 +55,7 @@ int main() try
 
 	asio::channel<void(boost::system::error_code, std::string)> channel {ctx};
 	asio::co_spawn(ctx, reader(ctx, channel), io::rethrowed);
-	asio::co_spawn(ctx, writer('x', "garox", channel), io::rethrowed);
-	asio::co_spawn(ctx, writer('y', "dudos", channel), io::rethrowed);
+	asio::co_spawn(ctx, writer(ctx, channel), io::rethrowed);
 
 	ctx.run();
 	return 0;
